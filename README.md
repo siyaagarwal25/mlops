@@ -1,203 +1,191 @@
-# 🩺 Diabetes Prediction Model – MLOps Project (FastAPI + Docker + K8s)
+# Diabetes Prediction - DevOps for AI Capstone (Unit V)
 
-This beginner-friendly project walks you through building and deploying a machine learning model for diabetes prediction. You’ll learn how to:
+This repository is suitable for your Unit V mini project: DevOps for AI using open-source tools.
 
-- ✅ Train a model using Random Forest
-- ✅ Serve it with FastAPI
-- ✅ Dockerize the application
-- ✅ Deploy it on Kubernetes (with Kind)
-- ✅ Understand CI/CD and monitoring steps for future improvements
+Open-source stack used:
+- Scikit-learn (model training)
+- FastAPI (model serving)
+- Docker (containerization)
+- Kubernetes + Kind (orchestration)
+- GitHub Actions (CI/CD)
+- Prometheus client (metrics)
+- Pytest (test automation)
 
----
+## Suitability Analysis
 
-## 📊 Problem Statement
+Verdict: Suitable and recommended for Capstone Project 5.
 
-Predict if a person is diabetic based on:
+Why this matches Unit V requirements:
+- AI model lifecycle is present: training + inference endpoint.
+- DevOps practices are present: containerization, deployment manifests, automation.
+- Open-source framework requirement is satisfied by the full toolchain.
 
-- Pregnancies
-- Glucose
-- Blood Pressure
-- BMI
-- Age
+Initial gap analysis:
+- Missing/weak previously: health probes, CI/CD workflow, monitoring endpoint, test coverage, deployment hardening.
+- These have been started in this implementation.
 
-Model used: **Random Forest Classifier**  
-Dataset: **Pima Indians Diabetes Dataset**
+## What Has Been Implemented So Far
 
----
+- Improved API in main.py:
+  - Added /health and /ready endpoints for K8s probes.
+  - Added /metrics endpoint for Prometheus scraping.
+  - Added HTTP request count and latency metrics.
+  - Added API error counter metrics.
+  - Added model loaded status gauge metric.
+  - Added basic logging and configurable model path via environment variable.
 
-## 🚀 Quick Start
+- Added test suite in test_main.py:
+  - Health, prediction, validation, docs, and metrics tests.
+  - Auto-trains model in test setup if missing.
 
-### 1. Clone the Repository
+- Enhanced container setup in Dockerfile:
+  - Multi-stage build with Python 3.12 slim images.
+  - Non-root runtime user.
+  - Built-in model generation at image build time.
+  - Proper PID1/signal handling via tini.
+  - Healthcheck configured.
 
-```bash
-git clone https://github.com/iam-veeramalla/first-mlops-project.git
-cd first-mlops-project
-```
+- Improved Kubernetes manifest in k8s-deploy.yml:
+  - Liveness/readiness probes.
+  - Startup probe for safer cold start.
+  - Resource requests/limits.
+  - Security context hardening.
+  - Rolling update strategy.
+  - Horizontal Pod Autoscaler.
+  - PodDisruptionBudget for availability.
 
----
+- Added CI/CD workflow:
+  - .github/workflows/ci-cd.yml for lint, tests, build, and scan stages.
 
-## 💻 Setup and Model Training
+- Added Docker optimization:
+  - .dockerignore
 
-### 2. Create a Virtual Environment
+## Quick Start (Windows PowerShell)
 
-> 🔹 **Windows (CMD)**
+Recommended Python version: 3.10 to 3.12 for CI parity (3.14 also works with current requirements).
 
-```cmd
-python -m venv .mlops
-.mlops\Scripts\activate
-```
-
-> 🔹 **Windows (PowerShell)**
+1. Create virtual environment
 
 ```powershell
 python -m venv .mlops
 .\.mlops\Scripts\Activate.ps1
 ```
 
-> 🔹 **macOS/Linux**
+2. Install dependencies
 
-```bash
-python3 -m venv .mlops
-source .mlops/bin/activate
-```
-
-> 🔹 **Windows with Git Bash**
-
-```bash
-python -m venv .mlops
-source .mlops/Scripts/activate
-```
-
-### 3. Install Python Dependencies
-
-```bash
+```powershell
 pip install -r requirements.txt
 ```
 
-### 4. Train the Model
+3. Train model
 
-```bash
+```powershell
 python train.py
 ```
 
-➡️ This will generate a `model.pkl` file used for predictions.
+4. Run API
 
----
-
-## 🌐 Run FastAPI Locally
-
-### 5. Start FastAPI Server
-
-```bash
-uvicorn main:app --reload
+```powershell
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Open your browser: [http://localhost:8000/docs](http://localhost:8000/docs)
+5. Verify endpoints
 
-### 6. Sample Input for `/predict` endpoint
+- Swagger: http://localhost:8000/docs
+- Liveness: http://localhost:8000/health
+- Readiness: http://localhost:8000/ready
+- Metrics: http://localhost:8000/metrics
 
-```json
-{
-  "Pregnancies": 2,
-  "Glucose": 130,
-  "BloodPressure": 70,
-  "BMI": 28.5,
-  "Age": 45
-}
+Main Prometheus metrics now available:
+- `http_requests_total`
+- `http_request_duration_seconds`
+- `predictions_total`
+- `prediction_latency_seconds`
+- `api_errors_total`
+- `model_loaded`
+
+## Run Tests
+
+```powershell
+pytest -v
 ```
 
----
+## Docker Run
 
-## 🐳 Dockerize the API
-
-### 7. Build Docker Image
-
-```bash
-docker build -t diabetes-prediction-model .
+```powershell
+docker build -t diabetes-prediction-model:latest .
+docker run -p 8000:8000 diabetes-prediction-model:latest
 ```
 
-### 8. Run the Docker Container
+Quick verification:
+- http://localhost:8000/health
+- http://localhost:8000/docs
 
-```bash
-docker run -p 8000:8000 diabetes-prediction-model
-```
+## Kubernetes Run (Kind)
 
-### 9. Tag Docker Image
+1. Create cluster
 
-```bash
-docker tag <image-id> iamvikramkumar/diabetes-prediction-model:v1
-```
-
-(Find `<image-id>` using `docker images`)
-
-### 10. Push to Docker Hub
-
-```bash
-docker login
-docker push iamvikramkumar/diabetes-prediction-model:v1
-```
-
----
-
-## ☸️ Deploy on Kubernetes (Using Kind)
-
-> 📝 **Note:** Please install [Docker Desktop](https://docs.docker.com/get-started/get-docker/), [Kubectl](https://kubernetes.io/docs/tasks/tools/), and [Kind](https://kind.sigs.k8s.io/) before proceeding.
-
-### 11. Create a Kind Cluster
-
-```bash
+```powershell
 kind create cluster --name demo-mlops
 ```
 
-### 12. Check Cluster Status
+2. Update image name in k8s-deploy.yml to your Docker Hub repo.
 
-```bash
-kubectl config current-context
-kubectl get nodes
-```
+3. Apply deployment
 
-### 13. Apply Kubernetes Manifest
-
-```bash
-kubectl apply -f deploy.yaml
-```
-
-### 14. Monitor Kubernetes Resources
-
-```bash
+```powershell
+kubectl apply -f k8s-deploy.yml
 kubectl get pods -w
 kubectl get svc
+kubectl get hpa
+kubectl get pdb
 ```
 
-### 15. Port Forward to Access API
+4. Port forward
 
-```bash
+```powershell
 kubectl port-forward svc/diabetes-api-service 1111:80 --address=0.0.0.0
 ```
 
-🔗 Open: [http://localhost:1111/docs](http://localhost:1111/docs)
+Open: http://localhost:1111/docs
 
----
+Or use the automated Windows deployment script:
 
-## 🔄 Future Scope: CI/CD and Monitoring
+```powershell
+.\deploy.ps1
+```
 
-### 🧪 CI/CD (GitHub Actions, Not Implemented Yet)
+Note: service type is ClusterIP (recommended for Kind + port-forward workflow).
 
-- Auto test and validate model updates
-- Build Docker images
-- Push to Docker Hub
-- Deploy to Kubernetes
+## CI/CD Setup (GitHub Actions)
 
-### 📈 Monitoring (Not Implemented Yet)
+Add these repository secrets in GitHub:
+- DOCKER_USERNAME
+- DOCKER_PASSWORD
 
-- Prometheus + Grafana for API performance
-- Evidently AI or WhyLogs for data drift and prediction accuracy
-- Alerts for latency or failure spikes
+On push to main, the pipeline runs lint, test, build, and security checks.
 
----
+Pipeline file:
+- .github/workflows/ci-cd.yml
 
-🙌 Credits
+Current CI stages:
+- Lint and formatting checks
+- Unit tests
+- Docker image build on PR/develop (no push)
+- Docker image build and push on main (with secrets)
+- Security scan (Bandit) on production Python files
 
-Created by `ABHISHEK VEERAMALLA`
+## Suggested Capstone Report Sections
 
-Subscribe for more DevOps + MLOps content on the YouTube Channel - `Abhishek.Veeramalla`
+- Problem statement and dataset
+- Architecture diagram (train -> API -> Docker -> K8s -> monitoring)
+- DevOps workflow and CI/CD stages
+- Test strategy and results
+- Deployment screenshots (pods, svc, docs)
+- Lessons learned and future improvements
+
+## Notes
+
+- Keep using this repository as your base project.
+- The implementation has already started and aligns with Unit V outcomes.
+- Final verification and submission checklist: see PHASE8_EVIDENCE.md

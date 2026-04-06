@@ -7,6 +7,10 @@ kubectl apply -f k8s-deploy.yml
 
 # Wait for deployment
 kubectl rollout status deployment/diabetes-api
+kubectl wait --for=condition=Ready pod -l app=diabetes-api --timeout=180s
+
+echo "📋 Deployment summary"
+kubectl get deploy,po,svc,hpa,pdb
 
 # Port forward (background)
 echo "🔁 Starting port-forward..."
