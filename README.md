@@ -1,6 +1,5 @@
 # Diabetes Prediction - DevOps for AI Capstone (Unit V)
 
-This repository is suitable for your Unit V mini project: DevOps for AI using open-source tools.
 
 Open-source stack used:
 - Scikit-learn (model training)
