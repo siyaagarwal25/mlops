@@ -1,6 +1,6 @@
 # train.py
-import numpy as np
 import pandas as pd
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
@@ -14,7 +14,6 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer
 import joblib
 
 
@@ -47,24 +46,29 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 
 # -----------------------------
-# 4) Preprocessing function
-# -----------------------------
-# In this dataset, 0 can be medically invalid for some fields.
-# We convert such zeros to NaN, then impute missing values in the pipeline.
-def mark_invalid_zeros(data):
-    df_local = pd.DataFrame(data).copy()
-    zero_as_missing_cols = ["Glucose", "BloodPressure", "BMI"]
-    df_local[zero_as_missing_cols] = df_local[zero_as_missing_cols].replace(0, np.nan)
-    return df_local
-
-
-# -----------------------------
 # 5) Build end-to-end pipeline
 # -----------------------------
+# In this dataset, 0 can be medically invalid for Glucose/BloodPressure/BMI.
+# We directly impute 0 as missing for these columns using median values.
+preprocessor = ColumnTransformer(
+    transformers=[
+        (
+            "impute_zero_medical_fields",
+            SimpleImputer(missing_values=0, strategy="median"),
+            ["Glucose", "BloodPressure", "BMI"],
+        ),
+        (
+            "impute_other_fields",
+            SimpleImputer(strategy="median"),
+            ["Pregnancies", "Age"],
+        ),
+    ],
+    remainder="drop",
+)
+
 model_pipeline = Pipeline(
     steps=[
-        ("zero_handler", FunctionTransformer(mark_invalid_zeros, validate=False)),
-        ("imputer", SimpleImputer(strategy="median")),
+        ("preprocessor", preprocessor),
         (
             "model",
             RandomForestClassifier(

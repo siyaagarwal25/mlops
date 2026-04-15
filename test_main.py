@@ -7,11 +7,24 @@ import os
 import subprocess
 import sys
 
+import joblib
 import pytest
 from fastapi.testclient import TestClient
 
-if not os.path.exists("diabetes_model.pkl"):
-    subprocess.run([sys.executable, "train.py"], check=True)
+
+def ensure_compatible_model_artifact():
+    if not os.path.exists("diabetes_model.pkl"):
+        subprocess.run([sys.executable, "train.py"], check=True)
+        return
+
+    try:
+        joblib.load("diabetes_model.pkl")
+    except Exception:
+        # Regenerate if an old/incompatible pickle exists.
+        subprocess.run([sys.executable, "train.py"], check=True)
+
+
+ensure_compatible_model_artifact()
 
 from main import app
 
